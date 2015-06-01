@@ -14,7 +14,6 @@ A tool for encoding binary data from music files into images as visual noise, wh
 - From the command line, run
 
 	> java Noisify \[image file path\] \[music file path\] \[image bits\]
-
 - For example:
 	
 	> java Noisify "kale.jpeg" "Uptown Funk.mp3" 2
@@ -26,7 +25,9 @@ A tool for encoding binary data from music files into images as visual noise, wh
 - Make sure the noised image is located in this same directory
 - NOTE: to extract music from an image, you must know the image bits value with which it was encoded.
 - From the command line, run
+	
 	> java Denoisify \[image file path\] \[image bits\]
 - For example:
+	
 	> java Denoisify "noised.png" 2
 - If all parameters are sufficient, the resultant image and music file will be called "denoised.png" and "musicOut.mp3", respectively. They will be located in the same images directory. 
