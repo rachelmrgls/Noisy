@@ -12,8 +12,11 @@ A tool for encoding binary data from music files into images as visual noise, wh
 	- A higher value allows for less music storage, but gives better image quality.
 	- A value around 2 - 4 is suggested. 
 - From the command line, run
+
 	> java Noisify \[image file path\] \[music file path\] \[image bits\]
+
 - For example:
+	
 	> java Noisify "kale.jpeg" "Uptown Funk.mp3" 2
 - If all parameters are sufficient, the resultant image will be called "noised.png" and will be located in the same directory
 
