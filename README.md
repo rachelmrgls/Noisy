@@ -1,5 +1,12 @@
-# magic-music-fund
-Crowdfunding for lawnpartie$ events at eating clubs (at Princeton)
+# Noisy
+A tool for encoding binary data from music files into images as visual noise, while maintaining image content.
 
 
-I'M CHANGING THE README
+# To Encode Music into Image
+- Download source code
+- Navigate to [images directory] (./images) from the command-line
+- Add image and music file to this directory (example:  kale.jpeg, Uptown Funk.mp3)
+- Select the number of 
+- From the command line, run
+
+> java Noisify "kale.jpeg" "Uptown Funk.mp3" 

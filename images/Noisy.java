@@ -11,6 +11,9 @@ import java.lang.StringBuilder;
 
 public class Noisy {
 	public static void quantize(String newFileName, String musicFileName, int level) throws IOException{
+		if (level < 1 || level > 8) {
+			throw new IOException("Level must be an integer from 1-8");
+		}
 		BufferedImage img = ImageIO.read(new File(newFileName));
 		int w = img.getWidth(null);
 		int h = img.getHeight(null);
