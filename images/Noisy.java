@@ -10,10 +10,14 @@ import java.util.Iterator;
 import java.lang.StringBuilder;
 
 public class Noisy {
-	public static void quantize(String newFileName, String musicFileName, int level) throws IOException{
-		if (level < 1 || level > 8) {
-			throw new IOException("Level must be an integer from 1-8");
+	public static void quantize(String newFileName, String musicFileName, int imgBits) throws IOException{
+		//check for valid parameters
+		if (imgBits < 0 || imgBits > 7) {
+			throw new IOException("\n\n[image bits] represents the number of bits (per 8 bits) assigned to the image," +
+								  " \nand must be an integer between 0 (only noise) and 7 (very little noise)");
 		}
+
+		int levels = (int) Math.pow(2.0,imgBits);
 		BufferedImage img = ImageIO.read(new File(newFileName));
 		int w = img.getWidth(null);
 		int h = img.getHeight(null);
@@ -23,9 +27,9 @@ public class Noisy {
 				int value = img.getRGB(i,j);
 				Color c = new Color(value);
 				int arr[] = new int[3];
-				arr[0] = (int) Math.floor(c.getRed() * level / 256) * 256 / level;
-				arr[1] = (int) Math.floor(c.getGreen() * level / 256) * 256 / level;
-				arr[2] = (int) Math.floor(c.getBlue() * level / 256) * 256 / level;
+				arr[0] = (int) Math.floor(c.getRed() * levels / 256) * 256 / levels;
+				arr[1] = (int) Math.floor(c.getGreen() * levels / 256) * 256 / levels;
+				arr[2] = (int) Math.floor(c.getBlue() * levels / 256) * 256 / levels;
 				c = new Color(arr[0],arr[1],arr[2]);
 
 				bi.setRGB(i,j, c.getRGB());
@@ -33,21 +37,24 @@ public class Noisy {
 		}
 		File outputfile = new File("quantized.png");
     	ImageIO.write(bi, "png", outputfile);
-    	addNoise(musicFileName, level);
+    	addNoise(musicFileName, imgBits);
     }
-    public static void addNoise(String musicFileName, int level) throws IOException {
+    public static void addNoise(String musicFileName, int imgBits) throws IOException {
+		//check for valid parameters
+		File musicFile = new File(musicFileName);
 		BufferedImage img = ImageIO.read(new File("quantized.png"));
 		int w = img.getWidth(null);
 		int h = img.getHeight(null);
-		int interval = 256 / level;
-		int imageBits = (int) (Math.log(level) / Math.log(2));
-		File musicFile = new File(musicFileName);
+
+		if (musicFile.length() + 4 > (w * h * 3 * (8-imgBits) / 8)) {
+			throw new IOException("Not enough space to store the provided music file." +
+								  " To remedy this issue you can: select a lower value for [image bits]," +
+								  " pick a smaller music file, and/or pick a larger image file");
+		}
+		int levels = (int) Math.pow(2.0,imgBits);
+		int interval = 256 / levels;
 		FileInputStream musicInputStream = new FileInputStream(musicFile);
 		int metadata = (int) musicFile.length();
-		if (musicFile.length() + 4 > (w * h * 3 * (8-imageBits) / 8)) {
-			//System.out.println("music file will be cut short");
-			metadata = (w * h * 3 * (8-imageBits) / 8);
-		}
 		byte[] metaArray = ByteBuffer.allocate(4).putInt(metadata).array();
 		byte[] musicArray = new byte[(int) musicFile.length()];
 		
@@ -74,7 +81,7 @@ public class Noisy {
 				arr[2] = c.getBlue();
 				for (int k = 0; k < 3; k++) {
 					StringBuilder noise = new StringBuilder();
-					for (int l = 0; l < (8-imageBits); l++) {
+					for (int l = 0; l < (8-imgBits); l++) {
 						if (itr.hasNext()) {
 							if (itr.next())
 								noise.append("1");
@@ -95,12 +102,18 @@ public class Noisy {
     	ImageIO.write(bi, "png", outputfile);
     }
 
-    public static void extractNoise(String noisedFileName, int level) throws IOException {
+    public static void extractNoise(String noisedFileName, int imgBits) throws IOException {
+    	//check for valid parameters
+		if (imgBits < 0 || imgBits > 7) {
+			throw new IOException("\n\n[image bits] represents the number of bits (per 8 bits) assigned to the image," +
+								  " \nand must be an integer between 0 (only noise) and 7 (very little noise)");
+		}
+
 		BufferedImage img = ImageIO.read(new File(noisedFileName));
 		int w = img.getWidth(null);
 		int h = img.getHeight(null);
-		int interval = 256 / level;
-		int imageBits = (int) (Math.log(level) / Math.log(2));
+		int levels = (int) Math.pow(2.0, imgBits);
+		int interval = 256 / levels;
 
 
 		// step 1 : separate out noise and image
@@ -118,7 +131,7 @@ public class Noisy {
 				arrOrig[2] = c.getBlue();
 
 				for (int k = 0; k < 3; k++) {
-					arrQuant[k] = (int) Math.floor(arrOrig[k] * level / 256) * 256 / level;
+					arrQuant[k] = (int) Math.floor(arrOrig[k] * levels / 256) * 256 / levels;
 					byte[] temp = ByteBuffer.allocate(4).putInt(arrOrig[k]-arrQuant[k]).array();
 					paddedNoise[padIndex] = temp[3];
 					padIndex++;
@@ -132,7 +145,7 @@ public class Noisy {
     	ImageIO.write(bi, "png", outputfile);
 
 		// step 2: read metadata to find how long the music file should be
-    	byte[] unpaddedNoise = new byte[w * h * 3 * (8-imageBits) / 8];
+    	byte[] unpaddedNoise = new byte[w * h * 3 * (8-imgBits) / 8];
 
     	StringBuilder bytes = new StringBuilder();
     	ByteArrayBitIterable musicDataIterable = new ByteArrayBitIterable(paddedNoise);
@@ -142,7 +155,7 @@ public class Noisy {
     	for (int i = 0; i < unpaddedNoise.length - 1; i++) {
     		StringBuilder noise = new StringBuilder();
     		for (int j = 0; j < 8; j++) {
-    			while (itrIndex < imageBits) {
+    			while (itrIndex < imgBits) {
     				itr.next();
     				itrIndex = (itrIndex + 1) % 8;
     			}
@@ -165,7 +178,7 @@ public class Noisy {
     	int musicFileLength = ByteBuffer.wrap(metadata).getInt();
     	byte[] musicFileBytes = new byte[musicFileLength];
 
-    	for (int i = 0; i <musicFileLength; i++)
+    	for (int i = 0; i < musicFileLength; i++)
     		musicFileBytes[i] = unpaddedNoise[i+4];
 
 		FileOutputStream musicFile = new FileOutputStream("musicOut.mp3");
